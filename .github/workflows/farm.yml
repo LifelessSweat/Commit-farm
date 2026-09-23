@@ -1,0 +1,34 @@
+name: Automated Commit Farm
+
+on:
+  schedule:
+    # Runs automatically every single day at midnight
+    - cron: '0 0 * * *'
+  # Adds a button so you can trigger commits manually anytime
+  workflow_dispatch:
+
+jobs:
+  farm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 2. Make Dummy Commits
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # This loop creates 5 rapid commits to darken your contribution graph grid
+          for i in {1..5}
+          do
+            echo "Farm update: $(date)" >> farm-log.txt
+            git add farm-log.txt
+            git commit -m "Automated farm commit #$i"
+          done
+
+      - name: 3. Push changes back to repo
+        run: |
+          git push origin main
