@@ -85,3 +85,4 @@ Farm update 69: Wed Sep 23 17:18:59 UTC 2026
 Farm update 70: Wed Sep 23 17:18:59 UTC 2026
 Farm update 71: Wed Sep 23 17:18:59 UTC 2026
 Farm update 72: Wed Sep 23 17:18:59 UTC 2026
+Farm update 73: Wed Sep 23 17:18:59 UTC 2026
