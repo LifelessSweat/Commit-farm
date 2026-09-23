@@ -2,10 +2,12 @@ name: Automated Commit Farm
 
 on:
   schedule:
-    # 1. Runs automatically every 5 minutes
+    # 1. Runs automatically every 5 minutes (500 commits)
     - cron: '*/5 * * * *'
-    # 2. Runs automatically once a day at 12:00 AM EDT (which is 04:00 AM UTC)
+    # 2. Runs automatically once a day at 12:00 AM EDT (2500 commits)
     - cron: '0 4 * * *'
+    # 3. Runs automatically once a day at 12:00 PM Noon EDT (1000 commits)
+    - cron: '0 16 * * *'
   # Allows you to manually trigger a batch anytime
   workflow_dispatch:
 
@@ -27,15 +29,18 @@ jobs:
           HOUR=$(date -u +%H)
           MINUTE=$(date -u +%M)
           
-          # Default to 10 commits
-          NUM_COMMITS=10
+          # Default to 500 commits every 5 minutes
+          NUM_COMMITS=500
           
-          # If it is 4:00 AM UTC (12:00 AM Eastern Time) and within the first 5 minutes, scale up to 500
+          # Check for specific daily bursts
           if [ "$HOUR" == "04" ] && [ "$MINUTE" -lt "06" ]; then
-            echo "12:00 AM EDT detected! Switching to 500 bulk commits."
-            NUM_COMMITS=500
+            echo "12:00 AM EDT detected! Switching to 2500 bulk commits."
+            NUM_COMMITS=2500
+          elif [ "$HOUR" == "16" ] && [ "$MINUTE" -lt "06" ]; then
+            echo "12:00 PM Noon EDT detected! Switching to 1000 bulk commits."
+            NUM_COMMITS=1000
           else
-            echo "Standard interval detected. Running 10 commits."
+            echo "Standard interval detected. Running 500 commits."
           fi
           
           # Execute the loop based on the determined amount
