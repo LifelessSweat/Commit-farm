@@ -2,9 +2,11 @@ name: Automated Commit Farm
 
 on:
   schedule:
-    # Runs automatically every single day at midnight
-    - cron: '0 0 * * *'
-  # Adds a button so you can trigger commits manually anytime
+    # 1. Runs automatically every 5 minutes
+    - cron: '*/5 * * * *'
+    # 2. Runs automatically once a day at 12:00 AM EDT (which is 04:00 AM UTC)
+    - cron: '0 4 * * *'
+  # Allows you to manually trigger a batch anytime
   workflow_dispatch:
 
 jobs:
@@ -14,17 +16,32 @@ jobs:
       contents: write
     steps:
       - name: 1. Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: 2. Make Dummy Commits
+      - name: 2. Smart Bulk Farm
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # This loop creates 5 rapid commits to darken your contribution graph grid
-          for i in {1..5}
+          # Get current hour and minute in UTC
+          HOUR=$(date -u +%H)
+          MINUTE=$(date -u +%M)
+          
+          # Default to 10 commits
+          NUM_COMMITS=10
+          
+          # If it is 4:00 AM UTC (12:00 AM Eastern Time) and within the first 5 minutes, scale up to 500
+          if [ "$HOUR" == "04" ] && [ "$MINUTE" -lt "06" ]; then
+            echo "12:00 AM EDT detected! Switching to 500 bulk commits."
+            NUM_COMMITS=500
+          else
+            echo "Standard interval detected. Running 10 commits."
+          fi
+          
+          # Execute the loop based on the determined amount
+          for i in $(seq 1 $NUM_COMMITS)
           do
-            echo "Farm update: $(date)" >> farm-log.txt
+            echo "Farm update $i: $(date)" >> farm-log.txt
             git add farm-log.txt
             git commit -m "Automated farm commit #$i"
           done
