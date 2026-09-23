@@ -19,38 +19,44 @@ jobs:
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      - name: 2. Smart Bulk Farm
+      - name: 2. Instant Database Injection Farm
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Get current hour and minute in UTC
           HOUR=$(date -u +%H)
           MINUTE=$(date -u +%M)
-          
-          # Default to 500 commits every 5 minutes
           NUM_COMMITS=500
           
-          # Check for specific daily bursts
           if [ "$HOUR" == "04" ] && [ "$MINUTE" -lt "06" ]; then
-            echo "12:00 AM EDT detected! Switching to 2500 bulk commits."
+            echo "12:00 AM EDT detected! Preparing 2500 fast commits."
             NUM_COMMITS=2500
           elif [ "$HOUR" == "16" ] && [ "$MINUTE" -lt "06" ]; then
-            echo "12:00 PM Noon EDT detected! Switching to 1000 bulk commits."
+            echo "12:00 PM Noon EDT detected! Preparing 1000 fast commits."
             NUM_COMMITS=1000
           else
-            echo "Standard interval detected. Running 500 commits."
+            echo "Standard interval. Preparing 500 fast commits."
           fi
           
-          # Execute the loop based on the determined amount
+          # 1. Create a fresh file variation and stage it to get a base tree structure
+          echo "Farm update payload: $(date)" >> farm-log.txt
+          git add farm-log.txt
+          TREE_SHA=$(git write-tree)
+          PARENT_SHA=$(git rev-parse HEAD)
+          
+          # 2. Inject raw commit objects directly into git database sequentially via memory
+          echo "Injecting $NUM_COMMITS commits natively..."
           for i in $(seq 1 $NUM_COMMITS)
           do
-            echo "Farm update $i: $(date)" >> farm-log.txt
-            git add farm-log.txt
-            git commit -m "Automated farm commit #$i"
+            PARENT_SHA=$(echo "Automated farm commit #$i" | git commit-tree $TREE_SHA -p $PARENT_SHA)
           done
+          
+          # 3. Point the main branch reference directly to the tip of our massive commit chain
+          git update-ref refs/heads/main $PARENT_SHA
 
-      - name: 3. Push changes back to repo
+      - name: 3. Push massive payload to repo
         run: |
-          git push origin main
+          git push origin main --force
